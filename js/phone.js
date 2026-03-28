@@ -86,7 +86,7 @@
     try {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
       $video.srcObject = stream;
-      await $video.play();
+      $video.play().catch(e => console.warn('[Phone] play() warn:', e));
       setStatus('connected', 'PC에 연결됨');
       $captureBtn.disabled = false;
       console.log('[Phone] Camera started, track:', stream.getVideoTracks()[0].label);
