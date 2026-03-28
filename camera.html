@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>폰 스캐너 — 촬영</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📷</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Gun.js relay -->
+  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+</head>
+<body class="phone-page">
+
+  <!-- Camera Viewfinder -->
+  <video id="camera-viewfinder"
+         autoplay
+         playsinline
+         muted
+         aria-label="카메라 뷰파인더"></video>
+
+  <!-- Document guide overlay -->
+  <div class="doc-guide" aria-hidden="true"></div>
+
+  <!-- Status Bar -->
+  <div id="status-bar" role="status" aria-live="polite">
+    <div class="status-indicator">
+      <span id="status-dot" class="status-dot connecting"></span>
+      <span id="status-text">연결 중...</span>
+    </div>
+  </div>
+
+  <!-- Capture Controls -->
+  <div id="camera-controls">
+    <button id="capture-btn"
+            aria-label="사진 촬영"
+            disabled>
+    </button>
+  </div>
+
+  <!-- Capture Flash -->
+  <div id="capture-flash" aria-hidden="true"></div>
+
+  <!-- Result Overlay (전송 완료) -->
+  <div id="result-overlay" role="dialog" aria-modal="true" aria-label="전송 완료">
+    <div class="result-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+           stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <p class="result-title">전송 완료!</p>
+    <p class="result-subtitle">
+      PC에서 문서 보정이 시작됩니다.<br />
+      PDF가 자동으로 다운로드됩니다.
+    </p>
+    <button id="another-btn">📷 한 장 더 찍기</button>
+  </div>
+
+  <!-- Error Overlay -->
+  <div id="error-overlay" role="alert" aria-live="assertive">
+    <div class="error-icon" aria-hidden="true">⚠️</div>
+    <p id="error-message">오류가 발생했습니다.</p>
+    <button id="error-retry-btn">다시 시도</button>
+  </div>
+
+  <!-- Phone Script -->
+  <script src="js/phone.js"></script>
+
+</body>
+</html>

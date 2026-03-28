@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="QR코드로 폰 카메라와 연결해 문서를 스캔하고 PDF로 저장하세요." />
+  <title>폰 스캐너 — QR 문서 스캔</title>
+
+  <!-- Favicon placeholder -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- QR Code (load early) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+          integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSe4Zt6p6oefUnNvm+h9j/wJ0os44I/pVFzw=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <!-- Gun.js relay -->
+  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+
+  <!-- Perspective Transform -->
+  <script src="https://cdn.jsdelivr.net/npm/perspective-transform@1.1.3/dist/perspective-transform.js"></script>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+          integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfYEsMRCwOA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body class="pc-page">
+
+  <!-- Header -->
+  <header class="pc-header">
+    <div>
+      <h1>📄 폰 스캐너</h1>
+      <p class="subtitle">QR코드로 연결 → 촬영 → PDF 다운로드</p>
+    </div>
+    <span id="session-id-text" class="session-id-display"></span>
+  </header>
+
+  <!-- Main State Container -->
+  <main id="state-container">
+
+    <!-- ── State: Waiting for QR Scan ── -->
+    <section id="state-waiting" class="state-panel active" aria-label="QR 대기 중">
+      <div class="qr-card">
+        <div id="qrcode" aria-label="QR 코드"></div>
+        <div class="qr-instructions">
+          <h2>폰으로 QR코드를 스캔하세요</h2>
+          <p>
+            기본 카메라 앱으로 QR코드를 스캔하면<br />
+            자동으로 카메라 페이지가 열립니다.
+          </p>
+        </div>
+        <div class="waiting-indicator">
+          <span class="pulse-dot"></span>
+          <span>폰 연결 대기 중...</span>
+        </div>
+      </div>
+      <p class="privacy-notice">
+        ⚠ 이미지는 공개 Gun.js 릴레이를 경유합니다. 민감한 문서는 주의하세요.
+      </p>
+    </section>
+
+    <!-- ── State: Receiving Image ── -->
+    <section id="state-receiving" class="state-panel" aria-label="이미지 수신 중">
+      <div class="receiving-card">
+        <div class="spinner" role="status" aria-label="로딩 중"></div>
+        <p>이미지를 수신하고 있습니다…</p>
+      </div>
+    </section>
+
+    <!-- ── State: Corner Adjustment ── -->
+    <section id="state-corner" class="state-panel" aria-label="코너 조정">
+      <p class="corner-instructions">
+        📌 파란색 핸들을 드래그해 문서의 4개 모서리를 정확히 맞춰주세요.
+      </p>
+
+      <div id="corner-wrapper">
+        <img id="preview-image" src="" alt="미리보기" draggable="false" />
+        <canvas id="corner-canvas"></canvas>
+      </div>
+
+      <div class="corner-actions">
+        <button id="reset-corners-btn" class="btn btn-secondary">
+          ↺ 초기화
+        </button>
+        <button id="confirm-corners-btn" class="btn btn-primary">
+          ✓ 확인 및 보정
+        </button>
+      </div>
+    </section>
+
+    <!-- ── State: Processing ── -->
+    <section id="state-processing" class="state-panel" aria-label="보정 처리 중">
+      <div class="processing-card">
+        <div class="spinner" role="status" aria-label="처리 중"></div>
+        <div class="progress-bar-wrap">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <p id="progress-label">처리 중...</p>
+      </div>
+    </section>
+
+    <!-- ── State: Done ── -->
+    <section id="state-done" class="state-panel" aria-label="완료">
+      <div class="done-card">
+        <canvas id="result-canvas" aria-label="보정된 문서 미리보기"></canvas>
+        <div class="done-actions">
+          <button id="download-btn" class="btn btn-success">
+            ⬇ PDF 다시 다운로드
+          </button>
+          <button id="scan-again-btn" class="btn btn-secondary">
+            📷 다른 페이지 스캔
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- App Scripts -->
+  <script src="js/correction.js"></script>
+  <script src="js/corner-ui.js"></script>
+  <script src="js/pc.js"></script>
+
+</body>
+</html>
