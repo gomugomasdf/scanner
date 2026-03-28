@@ -45,8 +45,8 @@
     }
 
     const peers = [
-      'https://gun-us.herokuapp.com/gun',
-      'https://gunjs.herokuapp.com/gun',
+      'https://peer.wallie.io/gun',
+      'https://gun-manhattan.herokuapp.com/gun',
     ];
 
     setStatus('connecting', '연결 중...');

@@ -59,26 +59,31 @@
     if (!$qrcode) return;
     $qrcode.innerHTML = '';
 
-    const base = location.origin + location.pathname.replace('index.html', '');
+    const base = location.origin + location.pathname.replace(/\/?index\.html$/, '/').replace(/([^/])$/, '$1/');
     const url  = `${base}camera.html?session=${sessionId}`;
 
     console.log('[PC] QR URL:', url);
 
-    new QRCode($qrcode, {
-      text: url,
+    const canvas = document.createElement('canvas');
+    $qrcode.appendChild(canvas);
+
+    QRCode.toCanvas(canvas, url, {
       width: 240,
-      height: 240,
-      colorDark: '#1a1a1a',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M,
+      margin: 2,
+      color: { dark: '#1a1a1a', light: '#ffffff' },
+    }, err => {
+      if (err) {
+        console.error('[PC] QR generation error:', err);
+        $qrcode.textContent = 'QR 생성 실패: ' + url;
+      }
     });
   }
 
   // ─── Gun.js Setup ───────────────────────────────────────────────────────
   function setupGun(sessionId) {
     const peers = [
-      'https://gun-us.herokuapp.com/gun',
-      'https://gunjs.herokuapp.com/gun',
+      'https://peer.wallie.io/gun',
+      'https://gun-manhattan.herokuapp.com/gun',
     ];
 
     if (typeof Gun === 'undefined') {
