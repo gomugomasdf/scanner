@@ -60,6 +60,12 @@ window.addEventListener('DOMContentLoaded', () => {
   // ─── PeerJS ─────────────────────────────────────────────────────────────
   let peer = null;
   let conn = null;
+  let isCameraReady = false;
+  let isPeerReady = false;
+
+  function updateButtonState() {
+    $captureBtn.disabled = !(isCameraReady && isPeerReady);
+  }
 
   function setupPeer() {
     if (typeof Peer === 'undefined') {
@@ -68,20 +74,34 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     setStatus('connecting', 'PC에 연결 중...');
     peer = new Peer();
+
     peer.on('open', () => {
       conn = peer.connect(sessionId, { reliable: true });
       conn.on('open', () => {
+        isPeerReady = true;
+        updateButtonState();
         setStatus('connected', 'PC에 연결됨');
-        console.log('[Phone] Connected to PC, session:', sessionId);
+        console.log('[Phone] Connected to PC');
       });
       conn.on('error', (e) => {
         console.error('[Phone] conn error:', e);
-        setStatus('error', '연결 오류');
+        setStatus('error', '연결 오류 — 재시도 중...');
+        // 3초 후 재연결 시도
+        setTimeout(() => setupPeer(), 3000);
       });
     });
+
     peer.on('error', (e) => {
       console.error('[Phone] peer error:', e.type);
-      setStatus('error', '연결 실패: ' + e.type);
+      if (e.type === 'peer-unavailable') {
+        setStatus('connecting', 'PC 대기 중... 재시도');
+        setTimeout(() => {
+          if (peer) peer.destroy();
+          setupPeer();
+        }, 3000);
+      } else {
+        setStatus('error', '연결 실패: ' + e.type);
+      }
     });
   }
 
@@ -133,8 +153,9 @@ window.addEventListener('DOMContentLoaded', () => {
     $video.setAttribute('playsinline', '');
     $video.setAttribute('webkit-playsinline', '');
     $video.srcObject = stream;
-    $captureBtn.disabled = false;
-    setStatus('connected', 'PC에 연결됨');
+    isCameraReady = true;
+    updateButtonState();
+    if (!isPeerReady) setStatus('connecting', 'PC에 연결 중...');
     $video.play().catch(e => console.warn('[Phone] play() warn:', e));
     console.log('[Phone] Camera started:', stream.getVideoTracks()[0]?.label);
   }
