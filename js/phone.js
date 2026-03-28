@@ -74,27 +74,26 @@
   async function startCamera() {
     setStatus('connecting', '카메라 시작 중...');
 
-    // 삼성 인터넷 호환: constraints 단순화
-    const constraints = {
-      video: { facingMode: 'environment' },
-      audio: false,
-    };
+    // 후면 카메라 먼저 시도, 실패 시 기본 카메라로 폴백
+    const tryConstraints = [
+      { video: { facingMode: { exact: 'environment' } }, audio: false },
+      { video: { facingMode: 'environment' }, audio: false },
+      { video: true, audio: false },
+    ];
 
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      $video.muted = true;
-      $video.setAttribute('playsinline', '');
-      $video.setAttribute('webkit-playsinline', '');
-      $video.srcObject = stream;
+    let lastErr = null;
+    for (const constraints of tryConstraints) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        break;
+      } catch (e) {
+        lastErr = e;
+        console.warn('[Phone] 시도 실패:', JSON.stringify(constraints), e.name, e.message);
+      }
+    }
 
-      // 버튼은 스트림 연결 즉시 활성화 (play() 결과 무관)
-      $captureBtn.disabled = false;
-      setStatus('connected', 'PC에 연결됨');
-
-      $video.play().catch(e => console.warn('[Phone] play() warn:', e));
-      console.log('[Phone] Camera started, track:', stream.getVideoTracks()[0].label);
-    } catch (err) {
-      console.error('[Phone] Camera error:', err);
+    if (!stream) {
+      const err = lastErr;
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         showPermissionError();
       } else if (err.name === 'NotFoundError') {
@@ -102,9 +101,19 @@
       } else if (err.name === 'NotReadableError') {
         showError('카메라가 이미 다른 앱에서 사용 중입니다.\n다른 앱을 닫고 다시 시도하세요.', true);
       } else {
-        showError('카메라를 시작할 수 없습니다: ' + err.message, true);
+        showError(`카메라 오류: ${err.name} — ${err.message}`, true);
       }
+      return;
     }
+
+    $video.muted = true;
+    $video.setAttribute('playsinline', '');
+    $video.setAttribute('webkit-playsinline', '');
+    $video.srcObject = stream;
+    $captureBtn.disabled = false;
+    setStatus('connected', 'PC에 연결됨');
+    $video.play().catch(e => console.warn('[Phone] play() warn:', e));
+    console.log('[Phone] Camera started:', stream.getVideoTracks()[0]?.label);
   }
 
   // ─── Capture ────────────────────────────────────────────────────────────
