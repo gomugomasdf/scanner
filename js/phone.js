@@ -9,14 +9,29 @@
 
 'use strict';
 
+// 레거시 getUserMedia 폴리필 (삼성 인터넷 구버전)
+if (!navigator.mediaDevices) {
+  navigator.mediaDevices = {};
+}
+if (!navigator.mediaDevices.getUserMedia) {
+  const legacy = navigator.getUserMedia
+    || navigator.webkitGetUserMedia
+    || navigator.mozGetUserMedia
+    || navigator.msGetUserMedia;
+  if (legacy) {
+    navigator.mediaDevices.getUserMedia = (constraints) =>
+      new Promise((resolve, reject) => legacy.call(navigator, constraints, resolve, reject));
+  }
+}
+
 // 디버그: JS 로드 확인
 window.addEventListener('DOMContentLoaded', () => {
   const dbg = document.getElementById('debug-msg');
   if (!dbg) return;
-  dbg.textContent = navigator.mediaDevices
-    ? 'JS 로드됨 ✓ mediaDevices 있음'
-    : 'JS 로드됨 ✓ mediaDevices 없음 ✗';
+  const hasMD = !!navigator.mediaDevices?.getUserMedia;
+  dbg.textContent = `URL: ${location.href}\nmediaDevices.getUserMedia: ${hasMD ? '있음 ✓' : '없음 ✗'}`;
   dbg.style.display = 'block';
+  setTimeout(() => { dbg.style.display = 'none'; }, 5000);
 });
 
 (async () => {
