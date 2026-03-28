@@ -64,18 +64,13 @@
 
     console.log('[PC] QR URL:', url);
 
-    const canvas = document.createElement('canvas');
-    $qrcode.appendChild(canvas);
-
-    QRCode.toCanvas(canvas, url, {
+    new QRCode($qrcode, {
+      text: url,
       width: 240,
-      margin: 2,
-      color: { dark: '#1a1a1a', light: '#ffffff' },
-    }, err => {
-      if (err) {
-        console.error('[PC] QR generation error:', err);
-        $qrcode.textContent = 'QR 생성 실패: ' + url;
-      }
+      height: 240,
+      colorDark: '#1a1a1a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
     });
   }
 
