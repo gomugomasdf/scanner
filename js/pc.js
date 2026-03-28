@@ -39,9 +39,7 @@
 
   // ─── Session ────────────────────────────────────────────────────────────
   let sessionId = null;
-  let gun = null;
-  let gunNode = null;
-  let lastTs = 0;
+  let peer = null;
 
   // Current image element used for processing
   let rawImageEl = null;
@@ -49,7 +47,8 @@
   let autoCorners = null;
 
   function generateSession() {
-    sessionId = crypto.randomUUID();
+    // PeerJS ID: 영숫자+하이픈만 허용, 최대 50자
+    sessionId = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
     if ($sessionIdTxt) $sessionIdTxt.textContent = `세션: ${sessionId.slice(0, 8)}…`;
     return sessionId;
   }
@@ -74,37 +73,38 @@
     });
   }
 
-  // ─── Gun.js Setup ───────────────────────────────────────────────────────
-  function setupGun(sessionId) {
-    const peers = [
-      'https://peer.wallie.io/gun',
-      'https://gun-manhattan.herokuapp.com/gun',
-    ];
+  // ─── PeerJS Setup ───────────────────────────────────────────────────────
+  function setupPeer(sid) {
+    if (peer) { peer.destroy(); peer = null; }
 
-    if (typeof Gun === 'undefined') {
-      showToast('Gun.js 로드 실패. 네트워크를 확인하세요.');
-      return;
-    }
+    peer = new Peer(sid);
 
-    gun = Gun({ peers, localStorage: false });
-    gunNode = gun.get(sessionId);
-
-    gunNode.on((data, key) => {
-      if (!data || !data.image) return;
-      if (!data.ts || data.ts <= lastTs) {
-        console.log('[PC] Stale data, ignoring (ts:', data.ts, 'lastTs:', lastTs, ')');
-        return;
-      }
-      if (currentState !== 'waiting' && currentState !== 'done') {
-        console.log('[PC] Busy, ignoring incoming image');
-        return;
-      }
-      lastTs = data.ts;
-      console.log('[PC] Image received, ts:', data.ts, 'size ~', Math.round(data.image.length / 1024), 'KB');
-      onImageReceived(data.image);
+    peer.on('open', (id) => {
+      console.log('[PC] PeerJS ready, id:', id);
     });
 
-    console.log('[PC] Gun subscribed to channel:', sessionId);
+    peer.on('connection', (conn) => {
+      console.log('[PC] Phone connected');
+      conn.on('data', (data) => {
+        if (typeof data !== 'string') return;
+        if (currentState !== 'waiting' && currentState !== 'done') return;
+        console.log('[PC] Image received, size ~', Math.round(data.length / 1024), 'KB');
+        onImageReceived(data);
+      });
+      conn.on('error', (e) => console.error('[PC] conn error:', e));
+    });
+
+    peer.on('error', (e) => {
+      console.error('[PC] PeerJS error:', e.type, e);
+      if (e.type === 'unavailable-id') {
+        // ID 충돌 시 새 세션으로 재시도
+        const newSid = generateSession();
+        generateQR(newSid);
+        setupPeer(newSid);
+      } else {
+        showToast('연결 오류: ' + e.type);
+      }
+    });
   }
 
   // ─── Image Received ─────────────────────────────────────────────────────
@@ -206,10 +206,9 @@
     if ($resultCanvas) { $resultCanvas.width = 0; $resultCanvas.height = 0; }
     if ($progressBar)  $progressBar.style.width = '0%';
 
-    // New session to avoid stale data
     const newSession = generateSession();
     generateQR(newSession);
-    setupGun(newSession);
+    setupPeer(newSession);
     setState('waiting');
   }
 
@@ -241,7 +240,7 @@
     // Generate session and show QR
     const sid = generateSession();
     generateQR(sid);
-    setupGun(sid);
+    setupPeer(sid);
     setState('waiting');
   }
 

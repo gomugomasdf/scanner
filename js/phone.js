@@ -57,34 +57,32 @@ window.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // ─── Gun.js ─────────────────────────────────────────────────────────────
-  let gun = null;
-  let gunNode = null;
-  let isGunReady = false;
+  // ─── PeerJS ─────────────────────────────────────────────────────────────
+  let peer = null;
+  let conn = null;
 
-  function setupGun() {
-    if (typeof Gun === 'undefined') {
-      console.error('[Phone] Gun.js not loaded');
-      setStatus('error', 'Gun.js 로드 실패');
+  function setupPeer() {
+    if (typeof Peer === 'undefined') {
+      showError('PeerJS 로드 실패. 네트워크를 확인하세요.', true);
       return;
     }
-
-    const peers = [
-      'https://peer.wallie.io/gun',
-      'https://gun-manhattan.herokuapp.com/gun',
-    ];
-
-    setStatus('connecting', '연결 중...');
-    gun = Gun({ peers, localStorage: false });
-    gunNode = gun.get(sessionId);
-
-    // Gun.js doesn't have a reliable "connected" callback,
-    // so we mark ready after a short delay and trust it works
-    setTimeout(() => {
-      isGunReady = true;
-      setStatus('connected', 'PC에 연결됨');
-      console.log('[Phone] Gun ready, session:', sessionId);
-    }, 1500);
+    setStatus('connecting', 'PC에 연결 중...');
+    peer = new Peer();
+    peer.on('open', () => {
+      conn = peer.connect(sessionId, { reliable: true });
+      conn.on('open', () => {
+        setStatus('connected', 'PC에 연결됨');
+        console.log('[Phone] Connected to PC, session:', sessionId);
+      });
+      conn.on('error', (e) => {
+        console.error('[Phone] conn error:', e);
+        setStatus('error', '연결 오류');
+      });
+    });
+    peer.on('error', (e) => {
+      console.error('[Phone] peer error:', e.type);
+      setStatus('error', '연결 실패: ' + e.type);
+    });
   }
 
   // ─── Status ─────────────────────────────────────────────────────────────
@@ -177,43 +175,24 @@ window.addEventListener('DOMContentLoaded', () => {
     const sizeKB  = Math.round(dataUrl.length * 0.75 / 1024);
     console.log('[Phone] Captured:', vw, 'x', vh, '~', sizeKB, 'KB');
 
-    // Send via Gun.js
     setStatus('connecting', '전송 중...');
 
+    if (!conn || !conn.open) {
+      showError('PC와 연결되지 않았습니다. 페이지를 다시 열어주세요.', true);
+      $captureBtn.disabled = false;
+      return;
+    }
+
     try {
-      await sendImage(dataUrl);
+      conn.send(dataUrl);
       setStatus('sent', '전송 완료!');
       showResultOverlay();
     } catch (err) {
       console.error('[Phone] Send error:', err);
       setStatus('error', '전송 실패');
-      showError('이미지 전송에 실패했습니다. 네트워크를 확인하세요.', true);
+      showError('이미지 전송에 실패했습니다.', true);
       $captureBtn.disabled = false;
     }
-  }
-
-  function sendImage(dataUrl) {
-    return new Promise((resolve, reject) => {
-      if (!gun || !gunNode) {
-        reject(new Error('Gun not initialized'));
-        return;
-      }
-
-      const payload = { image: dataUrl, ts: Date.now() };
-
-      // Gun.js put with ack callback
-      gunNode.put(payload, (ack) => {
-        if (ack.err) {
-          console.warn('[Phone] Gun ack error:', ack.err, '— treating as sent (relay may not ack)');
-        }
-        // Gun relay servers sometimes don't send ack but still relay the data
-        // We resolve regardless if data was sent
-        resolve();
-      });
-
-      // Fallback: resolve after 5s even without ack
-      setTimeout(resolve, 5000);
-    });
   }
 
   // ─── Result Overlay ─────────────────────────────────────────────────────
@@ -293,7 +272,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  setupGun();
+  setupPeer();
   await startCamera();
 
   // Cleanup on page unload
