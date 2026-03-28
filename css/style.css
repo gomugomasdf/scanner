@@ -396,8 +396,8 @@ body.pc-page {
 body.phone-page {
   background: #000;
   color: #fff;
-  height: 100dvh;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -498,7 +498,7 @@ body.phone-page {
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 24px 24px calc(env(safe-area-inset-bottom, 16px) + 24px);
+  padding: 24px 24px calc(env(safe-area-inset-bottom, 0px) + 40px);
   display: flex;
   align-items: center;
   justify-content: center;
