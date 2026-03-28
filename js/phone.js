@@ -82,14 +82,16 @@
 
     try {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
-      // 삼성 인터넷: muted + playsinline JS에서도 명시 필요
       $video.muted = true;
       $video.setAttribute('playsinline', '');
       $video.setAttribute('webkit-playsinline', '');
       $video.srcObject = stream;
-      $video.play().catch(e => console.warn('[Phone] play() warn:', e));
-      setStatus('connected', 'PC에 연결됨');
+
+      // 버튼은 스트림 연결 즉시 활성화 (play() 결과 무관)
       $captureBtn.disabled = false;
+      setStatus('connected', 'PC에 연결됨');
+
+      $video.play().catch(e => console.warn('[Phone] play() warn:', e));
       console.log('[Phone] Camera started, track:', stream.getVideoTracks()[0].label);
     } catch (err) {
       console.error('[Phone] Camera error:', err);
@@ -241,11 +243,12 @@
 
   // ─── Init ────────────────────────────────────────────────────────────────
   $captureBtn.disabled = true;
-  $captureBtn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    if (!$captureBtn.disabled) captureAndSend();
-  }, { passive: false });
   $captureBtn.addEventListener('click', captureAndSend);
+  $captureBtn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+  $captureBtn.addEventListener('touchend', (e) => {
+    e.stopPropagation();
+    if (!$captureBtn.disabled) captureAndSend();
+  }, { passive: true });
 
   if ($anotherBtn) $anotherBtn.addEventListener('click', takeAnother);
 
