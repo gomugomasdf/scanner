@@ -92,15 +92,15 @@
       console.log('[Phone] Camera started, track:', stream.getVideoTracks()[0].label);
     } catch (err) {
       console.error('[Phone] Camera error:', err);
-      let msg = '카메라를 시작할 수 없습니다.';
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        msg = '카메라 권한이 거부되었습니다.\n브라우저 설정에서 카메라 권한을 허용해주세요.';
+        showPermissionError();
       } else if (err.name === 'NotFoundError') {
-        msg = '카메라를 찾을 수 없습니다.';
+        showError('카메라를 찾을 수 없습니다.', true);
       } else if (err.name === 'NotReadableError') {
-        msg = '카메라가 이미 사용 중입니다.';
+        showError('카메라가 이미 다른 앱에서 사용 중입니다.\n다른 앱을 닫고 다시 시도하세요.', true);
+      } else {
+        showError('카메라를 시작할 수 없습니다: ' + err.message, true);
       }
-      showError(msg, true);
     }
   }
 
@@ -199,6 +199,38 @@
   function showError(msg, canRetry = true) {
     if ($errorMsg)    $errorMsg.textContent = msg;
     if ($retryBtn)    $retryBtn.style.display = canRetry ? 'block' : 'none';
+    const $guide = document.getElementById('permission-guide');
+    if ($guide) $guide.style.display = 'none';
+    if ($errorOverlay) $errorOverlay.classList.add('show');
+  }
+
+  function showPermissionError() {
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua);
+    const isSamsung = /SamsungBrowser/.test(ua);
+    const isFirefox = /Firefox/.test(ua);
+
+    let steps = '';
+    if (isIOS) {
+      steps = '📱 iPhone 설정 방법\n\n① 이 페이지를 닫고\n② iPhone 설정 앱 열기\n③ Safari → 카메라 → "허용"\n④ 다시 QR 스캔해서 진입';
+    } else if (isSamsung) {
+      steps = '📱 삼성 인터넷 설정 방법\n\n① 주소창 왼쪽 자물쇠 아이콘 탭\n② 카메라 → 허용\n③ 페이지 새로고침';
+    } else if (isFirefox) {
+      steps = '📱 Firefox 설정 방법\n\n① 주소창 왼쪽 자물쇠 아이콘 탭\n② 카메라 권한 → 허용\n③ 페이지 새로고침';
+    } else {
+      // Chrome (Android)
+      steps = '📱 Chrome 설정 방법\n\n① 주소창 오른쪽 점 3개 → 설정\n② 사이트 설정 → 카메라 → 허용\n\n또는\n\n① 주소창 왼쪽 자물쇠 아이콘 탭\n② 카메라 → 허용\n③ 페이지 새로고침';
+    }
+
+    if ($errorMsg) $errorMsg.textContent = '카메라 권한이 거부되었습니다.';
+    const $guide = document.getElementById('permission-guide');
+    const $steps = document.getElementById('permission-steps');
+    if ($guide && $steps) {
+      $steps.style.whiteSpace = 'pre-line';
+      $steps.textContent = steps;
+      $guide.style.display = 'block';
+    }
+    if ($retryBtn) $retryBtn.style.display = 'block';
     if ($errorOverlay) $errorOverlay.classList.add('show');
   }
 
@@ -208,6 +240,10 @@
 
   // ─── Init ────────────────────────────────────────────────────────────────
   $captureBtn.disabled = true;
+  $captureBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    if (!$captureBtn.disabled) captureAndSend();
+  }, { passive: false });
   $captureBtn.addEventListener('click', captureAndSend);
 
   if ($anotherBtn) $anotherBtn.addEventListener('click', takeAnother);
@@ -218,9 +254,6 @@
       startCamera();
     });
   }
-
-  // Prevent double-tap zoom on capture button
-  $captureBtn.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
 
   setupGun();
   await startCamera();
