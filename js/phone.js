@@ -74,17 +74,18 @@
   async function startCamera() {
     setStatus('connecting', '카메라 시작 중...');
 
+    // 삼성 인터넷 호환: constraints 단순화
     const constraints = {
-      video: {
-        facingMode: { ideal: 'environment' },
-        width:  { ideal: 1920, max: 4096 },
-        height: { ideal: 1080, max: 4096 },
-      },
+      video: { facingMode: 'environment' },
       audio: false,
     };
 
     try {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
+      // 삼성 인터넷: muted + playsinline JS에서도 명시 필요
+      $video.muted = true;
+      $video.setAttribute('playsinline', '');
+      $video.setAttribute('webkit-playsinline', '');
       $video.srcObject = stream;
       $video.play().catch(e => console.warn('[Phone] play() warn:', e));
       setStatus('connected', 'PC에 연결됨');

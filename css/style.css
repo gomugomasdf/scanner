@@ -506,8 +506,8 @@ body.phone-page {
 }
 
 #capture-btn {
-  width: 76px;
-  height: 76px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   background: #fff;
   border: 4px solid rgba(255,255,255,0.5);
@@ -516,7 +516,10 @@ body.phone-page {
   transition: all 0.15s ease;
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   outline: none;
+  pointer-events: auto;
+  z-index: 101;
 }
 
 #capture-btn::after {
