@@ -9,6 +9,16 @@
 
 'use strict';
 
+// 디버그: JS 로드 확인
+window.addEventListener('DOMContentLoaded', () => {
+  const dbg = document.getElementById('debug-msg');
+  if (!dbg) return;
+  dbg.textContent = navigator.mediaDevices
+    ? 'JS 로드됨 ✓ mediaDevices 있음'
+    : 'JS 로드됨 ✓ mediaDevices 없음 ✗';
+  dbg.style.display = 'block';
+});
+
 (async () => {
 
   // ─── DOM Refs ───────────────────────────────────────────────────────────
