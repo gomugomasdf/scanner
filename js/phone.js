@@ -119,7 +119,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // 후면 카메라 먼저 시도, 실패 시 기본 카메라로 폴백
     const tryConstraints = [
-      { video: { facingMode: { exact: 'environment' } }, audio: false },
+      { video: { facingMode: { exact: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false },
+      { video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+      { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
       { video: { facingMode: 'environment' }, audio: false },
       { video: true, audio: false },
     ];
@@ -192,7 +194,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ctx.drawImage($video, 0, 0, vw, vh);
 
     // Convert to JPEG
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
     const sizeKB  = Math.round(dataUrl.length * 0.75 / 1024);
     console.log('[Phone] Captured:', vw, 'x', vh, '~', sizeKB, 'KB');
 
